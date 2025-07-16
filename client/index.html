@@ -1,0 +1,169 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Adobe Acrobat Services PDF Embed API Sample</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+      id="viewport"
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f3f4f6;
+      }
+
+      #headingbox {
+        width: 100%;
+        padding: 2px 0;
+        background: linear-gradient(to right, #6b21a8, #312e81);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      #heading {
+        color: white;
+        font-size: 0.7rem;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 0.05em;
+        transition: transform 0.7s ease;
+      }
+
+      #heading:hover {
+        transform: scale(1.05);
+      }
+
+      #upload-box {
+        text-align: center;
+        margin: 20px;
+      }
+
+      #pdfUpload {
+        padding: 10px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+      }
+
+      #pdf-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 20px;
+        padding: 40px;
+        flex-wrap: wrap;
+      }
+
+      #adobe-dc-view {
+        flex: 1 1 50%;
+        max-width: 800px;
+        height: 80vh;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        background-color: #f9fafb;
+      }
+
+      #pdf-details {
+        flex: 1 1 40%;
+        max-width: 500px;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      #summary-heading {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 2px solid #6366f1;
+        padding-bottom: 8px;
+      }
+
+      #summary-content {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: #555;
+        list-style: disc;
+        padding-left: 20px;
+      }
+
+      li {
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="headingbox">
+      <h1 id="heading">heathens.dev</h1>
+    </div>
+
+    <div id="upload-box">
+      <input type="file" id="pdfUpload" accept="application/pdf" />
+    </div>
+
+    <div id="pdf-container">
+      <div id="adobe-dc-view"></div>
+      <div id="pdf-details">
+        <h2 id="summary-heading">PDF Summary</h2>
+        <ul id="summary-content">
+          <li><em>Upload a PDF to extract outline...</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
+
+    <script>
+      document.getElementById("pdfUpload").addEventListener("change", async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("pdf", file);
+
+        try {
+          const res = await fetch("/extract-outline", {
+            method: "POST",
+            body: formData
+          });
+
+          const data = await res.json();
+
+          const ul = document.getElementById("summary-content");
+          ul.innerHTML = "";
+          ul.innerHTML += `<li><strong>Title:</strong> ${data.title}</li>`;
+          data.outline.forEach(item => {
+            ul.innerHTML += `<li><strong>${item.level}</strong>: ${item.text} (Page ${item.page})</li>`;
+          });
+
+          const adobeDCView = new AdobeDC.View({
+            clientId: "391b24bffad34f26aebab4147c86c89b",
+            divId: "adobe-dc-view"
+          });
+
+          adobeDCView.previewFile({
+            content: {
+              location: {
+                url: `/uploads/${file.name}`
+              }
+            },
+            metaData: {
+              fileName: file.name
+            }
+          });
+
+        } catch (err) {
+          alert("Error processing PDF: " + err.message);
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>
